@@ -47,15 +47,15 @@ async function findInPath(executable: string): Promise<string | undefined> {
 }
 
 async function findDAPExecutable(): Promise<string | undefined> {
-  const executable = process.platform === "win32" ? "lldb-dap.exe" : "lldb-dap";
+  const executable = process.platform === "win32" ? "gdb.exe" : "gdb";
 
-  // Prefer lldb-dap from Xcode on Darwin.
+  // Prefer gdb from Xcode on Darwin.
   const xcrun_dap = findWithXcrun(executable);
   if (xcrun_dap) {
     return xcrun_dap;
   }
 
-  // Find lldb-dap in the user's path.
+  // Find gdb in the user's path.
   const path_dap = findInPath(executable);
   if (path_dap) {
     return path_dap;
@@ -68,7 +68,7 @@ async function getDAPExecutable(
   session: vscode.DebugSession,
 ): Promise<string | undefined> {
   const config = vscode.workspace.getConfiguration(
-    "lldb-dap",
+    "gdb-dap",
     session.workspaceFolder,
   );
 
@@ -88,10 +88,10 @@ async function getDAPExecutable(
 }
 
 /**
- * This class defines a factory used to find the lldb-dap binary to use
+ * This class defines a factory used to find the gdb-dap binary to use
  * depending on the session configuration.
  */
-export class LLDBDapDescriptorFactory
+export class GDBDapDescriptorFactory
   implements vscode.DebugAdapterDescriptorFactory
 {
   async createDebugAdapterDescriptor(
@@ -99,15 +99,20 @@ export class LLDBDapDescriptorFactory
     executable: vscode.DebugAdapterExecutable | undefined,
   ): Promise<vscode.DebugAdapterDescriptor | undefined> {
     const config = vscode.workspace.getConfiguration(
-      "lldb-dap",
+      "gdb-dap",
       session.workspaceFolder,
     );
 
     const log_path = config.get<string>("log-path");
     let env: { [key: string]: string } = {};
-    if (log_path) {
-      env["LLDBDAP_LOG"] = log_path;
-    }
+
+    const log_level = config.get<number>("log-level");
+    const args: string[] = ["-i", "dap"];
+    if (log_path)
+      args.push("-iex", `set debug dap-log-file ${log_path}`);
+    if (log_level)
+      args.push("-iex", `set debug dap-log-level ${log_level}`);
+
     const configEnvironment =
       config.get<{ [key: string]: string }>("environment") || {};
     const dapPath = await getDAPExecutable(session);
@@ -120,18 +125,18 @@ export class LLDBDapDescriptorFactory
     };
     if (dapPath) {
       if (!(await isExecutable(dapPath))) {
-        LLDBDapDescriptorFactory.showLLDBDapNotFoundMessage(dapPath);
+        GDBDapDescriptorFactory.showGDBDapNotFoundMessage(dapPath);
         return undefined;
       }
-      return new vscode.DebugAdapterExecutable(dapPath, [], dbgOptions);
+      return new vscode.DebugAdapterExecutable(dapPath, args, dbgOptions);
     } else if (executable) {
       if (!(await isExecutable(executable.command))) {
-        LLDBDapDescriptorFactory.showLLDBDapNotFoundMessage(executable.command);
+        GDBDapDescriptorFactory.showGDBDapNotFoundMessage(executable.command);
         return undefined;
       }
       return new vscode.DebugAdapterExecutable(
         executable.command,
-        executable.args,
+        [...args, ...executable.args],
         dbgOptions,
       );
     }
@@ -141,7 +146,7 @@ export class LLDBDapDescriptorFactory
   /**
    * Shows a message box when the debug adapter's path is not found
    */
-  static async showLLDBDapNotFoundMessage(path: string) {
+  static async showGDBDapNotFoundMessage(path: string) {
     const openSettingsAction = "Open Settings";
     const callbackValue = await vscode.window.showErrorMessage(
       `Debug adapter path: ${path} is not a valid file`,
@@ -151,7 +156,7 @@ export class LLDBDapDescriptorFactory
     if (openSettingsAction === callbackValue) {
       vscode.commands.executeCommand(
         "workbench.action.openSettings",
-        "lldb-dap.executable-path",
+        "gdb-dap.executable-path",
       );
     }
   }

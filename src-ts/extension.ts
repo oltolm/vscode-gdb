@@ -3,7 +3,7 @@ import * as util from "util";
 import * as vscode from "vscode";
 
 import {
-  LLDBDapDescriptorFactory,
+  GDBDapDescriptorFactory,
   isExecutable,
 } from "./debug-adapter-factory";
 import { DisposableContext } from "./disposable-context";
@@ -12,21 +12,21 @@ import { DisposableContext } from "./disposable-context";
  * This class represents the extension and manages its life cycle. Other extensions
  * using it as as library should use this class as the main entry point.
  */
-export class LLDBDapExtension extends DisposableContext {
+export class GDBDapExtension extends DisposableContext {
   constructor() {
     super();
     this.pushSubscription(
       vscode.debug.registerDebugAdapterDescriptorFactory(
-        "lldb-dap",
-        new LLDBDapDescriptorFactory(),
+        "gdb-dap",
+        new GDBDapDescriptorFactory(),
       ),
     );
 
     this.pushSubscription(
       vscode.workspace.onDidChangeConfiguration(async (event) => {
-        if (event.affectsConfiguration("lldb-dap.executable-path")) {
+        if (event.affectsConfiguration("gdb-dap.executable-path")) {
           const dapPath = vscode.workspace
-            .getConfiguration("lldb-dap")
+            .getConfiguration("gdb-dap")
             .get<string>("executable-path");
 
           if (dapPath) {
@@ -34,7 +34,7 @@ export class LLDBDapExtension extends DisposableContext {
               return;
             }
           }
-          LLDBDapDescriptorFactory.showLLDBDapNotFoundMessage(dapPath || "");
+          GDBDapDescriptorFactory.showGDBDapNotFoundMessage(dapPath || "");
         }
       }),
     );
@@ -45,5 +45,5 @@ export class LLDBDapExtension extends DisposableContext {
  * This is the entry point when initialized by VS Code.
  */
 export function activate(context: vscode.ExtensionContext) {
-  context.subscriptions.push(new LLDBDapExtension());
+  context.subscriptions.push(new GDBDapExtension());
 }
