@@ -2,7 +2,7 @@
   "name": "gdb-dap",
   "displayName": "GDB DAP",
   "version": "0.2.10",
-  "publisher": "gnu-vs-code-extensions",
+  "publisher": "OlegTolmatcev",
   "homepage": "https://sourceware.org/gdb/",
   "description": "GDB debugging from VSCode",
   "license": "Apache 2.0 License with LLVM exceptions",
