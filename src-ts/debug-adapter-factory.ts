@@ -78,7 +78,7 @@ async function getDAPExecutable(
     return configPath;
   }
 
-  // Try finding the lldb-dap binary.
+  // Try finding the gdb-dap binary.
   const foundPath = await findDAPExecutable();
   if (foundPath) {
     return foundPath;
